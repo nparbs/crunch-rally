@@ -1,7 +1,7 @@
 {
   "name": "crunch-rally",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A multiplayer snack-mascot kart racer for the browser and phones.",
   "type": "module",
   "scripts": {
