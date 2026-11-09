@@ -8,9 +8,12 @@ State as of v0.1.0 (2026-11-09).
 - Tests (`npm test`): track geometry, drift tiers, shields, lap counting, item odds, full 8-CPU races on both tracks, and room flow (host rules, a whole race with one reporting player and one who leaves, teleport rejection).
 - Checked in headless Chrome: title, lobby, a race on both tracks, phone landscape and portrait, and a two-browser online room through the real server (`scripts/mp.mjs`). The Docker image builds and answers `/health`.
 
+## Hosting
+
+Live at https://crunch.parbs.online since 2026-11-09. The VM setup follows docs/hosting.md, and `npm run ship` deploys. A two-browser room test (`URL=https://crunch.parbs.online/ node scripts/mp.mjs`) passed through Cloudflare.
+
 ## Not done yet
 
-- **Not deployed.** The VM still needs the clone, the deploy script and key, and the Cloudflare hostname. The steps are in docs/hosting.md.
 - **No human playtest yet.** Drift feel, turn rates, item odds and ability strength are first guesses. In CPU-only sims Hotshot Hal wins most races.
 - **Sounds and music** were written blind and haven't been listened to.
 

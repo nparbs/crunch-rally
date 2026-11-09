@@ -2,7 +2,7 @@
 
 A multiplayer kart racer for the browser and phones. Snack mascots race low-poly karts around giant-food worlds. Drift to charge boosts, grab crates for items, and use your racer's own special ability.
 
-Play at **https://crunch.parbs.online** (once it's live). Race the CPUs on your own, or create a room and send friends the 4-letter code. CPU racers fill the empty seats.
+Play at **https://crunch.parbs.online**. Race the CPUs on your own, or create a room and send friends the 4-letter code. CPU racers fill the empty seats.
 
 ## Controls
 
