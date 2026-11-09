@@ -4,14 +4,14 @@
 
 import { charById, type AbilityId } from './characters';
 import {
-  applyBuff, applyHit, bump, newKart, padsFor, placeOnGrid, progressOf, stepKart, tickTimers, updateProgress,
+  applyBuff, applyHit, bump, newKart, padsFor, placeOnGrid, progressOf, slipstream, stepKart, tickTimers, updateProgress,
   type BuffKind, type HitKind, type Input, type Kart, type PadRuntime,
 } from './kart';
 import { rollItem, type ItemId } from './items';
 import { clamp, rng, wrapAngle } from './math';
 import { SHOULDER, getTrack, type Track } from './track';
 import { trackById } from './tracks';
-import { botThink, newBrain, type Brain } from './bot';
+import { botThink, newBrain, type Brain, type CpuLevel } from './bot';
 
 export const DT = 1 / 60;
 export const COUNTDOWN = 3.2;
@@ -142,7 +142,7 @@ export class Race {
   private grapIds = new Map<string, string>();
   results: Result[] = [];
 
-  constructor(trackId: string, laps: number, entrants: Entrant[], seed: number, private emit: (e: RaceEvent) => void) {
+  constructor(trackId: string, laps: number, entrants: Entrant[], seed: number, private emit: (e: RaceEvent) => void, cpu: CpuLevel = 'normal') {
     this.track = getTrack(trackById(trackId));
     this.pads = padsFor(this.track);
     this.laps = laps;
@@ -152,12 +152,16 @@ export class Race {
       placeOnGrid(kart, this.track, slot);
       const r: Racer = {
         ...e, kart, input: { throttle: 0, steer: 0, drift: false }, item: null, count: 0, meter: 0,
-        place: slot, brain: e.bot ? newBrain(this.rand) : null, lastReport: 0, rolling: 0,
+        place: slot, brain: e.bot ? newBrain(this.rand, cpu) : null, lastReport: 0, rolling: 0,
       };
       if (r.brain) kart.mul = r.brain.skill;
       this.racers.push(r);
     });
     for (const p of crateSpots(this.track)) this.boxes.push({ ...p, t: 0 });
+  }
+
+  private *karts(): Iterable<Kart> {
+    for (const r of this.racers) yield r.kart;
   }
 
   racer(id: string): Racer | undefined {
@@ -225,6 +229,8 @@ export class Race {
       if (r.bot) {
         const think = botThink(r, this);
         const ev = stepKart(k, think.input, this.track, dt, this.pads);
+        const draft = slipstream(k, this.karts(), dt);
+        if (draft) ev.push(draft);
         for (const e of ev) if (e.k === 'mt') r.meter = Math.min(1, r.meter + METER_DRIFT[e.tier]);
         if (think.useItem) this.useItem(r.id);
         if (think.useAbility) this.useAbility(r.id);
@@ -396,9 +402,7 @@ export class Race {
     switch (ab) {
       case 'ghostPepper':
         applyBuff(k, 'ghostPepper');
-        applyBuff(k, 'espresso');
         this.emit({ k: 'buff', id: r.id, buff: 'ghostPepper' });
-        this.emit({ k: 'buff', id: r.id, buff: 'espresso' });
         break;
       case 'brineWave':
         this.spawn('puddle', r.id, k.x - fx * 6, k.y, k.z - fz * 6, 0, 0, 6.5, 9);

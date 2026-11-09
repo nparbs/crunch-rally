@@ -49,19 +49,25 @@ Crunch Rally is an original multiplayer kart racer for the browser and phones. L
   - A minimap, countdown, "wrong way" and "final lap" warnings, and a results table.
 - **Controls and effects:**
   - Emotes in online rooms.
-  - Touch controls: drag to steer, automatic gas, and drift, item, ability and brake buttons.
+  - Touch controls: drag to steer, plus gas, brake, drift, item and ability buttons (v0.1.1 replaced the automatic gas with a GAS button).
   - Gamepad support.
   - Sound effects and music, all synthesized in code.
+
+## v0.1.1 (done)
+
+- **Touch:** a GAS button replaces the automatic gas, so touch players can coast, brake and get rocket starts. DRIFT also counts as gas, and a thumb can slide between GAS, DRIFT and BRAKE without lifting. Portrait screens get a narrower two-column layout.
+- **Boost pads and the ramp:** the chevrons used to point backwards. They now point the way you drive.
+- **Balance:** the speed stat's spread is smaller and accel and handling count for more. Ghost Pepper no longer bundles an Espresso Shot; its fire speed-up is 12% instead of 8%. In 60 shuffled-grid CPU races per track, Hal's average place went from 2.4 to about 3.0-3.6, level with Glaze and Fizz.
+- **Slipstream** (from v0.2): stay right behind another kart for 1.4 s to get a 1 s boost. Wind lines show while you're tucked in.
+- **CPU difficulty** (from v0.2): Easy, Normal or Hard in the lobby.
 
 ## v0.2: feel and fairness (next)
 
 These are the most fun for the least work. Most come from what makes the classic kart racers feel good.
 
-- **Playtest pass:** tune drift charge times, turn rates, wall bounce, the item odds table and the ability charge rate. Find out whether Hotshot Hal's top speed is too strong. In CPU-only sims he wins most races.
-- **Slipstream:** after about 1.5 s right behind another kart, get a short boost. Show wind lines.
+- **Playtest pass:** tune drift charge times, turn rates, wall bounce, the item odds table and the ability charge rate. Sims say the racers are now roughly even, but no human has played yet.
 - **Hold items behind you:** hold the item button to trail a Butter Pat or Jawbreaker behind you as a shield, and let go to drop or throw it.
 - **Throw items backward:** hold down or brake while firing.
-- **CPU difficulty setting** (Easy, Normal or Hard) in the room settings.
 - **Touch assists:** optional auto-drift (drift starts when you steer hard) and optional tilt steering.
 - **Rematch flow:** a "Race again" button on results that keeps the room. Track voting: everyone votes and a random vote wins.
 - **Podium:** a short podium scene with the top 3 mascots.

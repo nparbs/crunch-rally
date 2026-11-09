@@ -3,6 +3,7 @@
 
 import { CHARACTERS, charById } from '../sim/characters';
 import { Race, DT, type Entrant } from '../sim/race';
+import { CPU_LEVELS } from '../sim/bot';
 import { TRACKS, trackById } from '../sim/tracks';
 import { MAX_RACERS, cleanName, type ClientMsg, type PlayerInfo, type RoomSettings, type ServerMsg } from './protocol';
 
@@ -24,7 +25,7 @@ const SNAP_EVERY = 3; // ticks between snapshots (20 a second)
 export class Room {
   readonly members = new Map<string, Member>();
   host = '';
-  settings: RoomSettings = { track: TRACKS[0].id, laps: 3, fill: true };
+  settings: RoomSettings = { track: TRACKS[0].id, laps: 3, fill: true, cpu: 'normal' };
   race: Race | null = null;
   private ticks = 0;
   private seed = 1;
@@ -70,6 +71,8 @@ export class Room {
           track: trackById(String(m.settings.track)).id,
           laps: Math.max(1, Math.min(5, Math.round(Number(m.settings.laps)) || 3)),
           fill: !!m.settings.fill,
+          // Older pages don't send a level; keep the current one.
+          cpu: CPU_LEVELS.includes(m.settings.cpu) ? m.settings.cpu : this.settings.cpu,
         };
         this.broadcastRoom();
         break;
@@ -117,7 +120,7 @@ export class Room {
     // Players start at the back; CPUs fill the front of the grid.
     entrants.sort((a, b) => Number(a.bot ? 0 : 1) - Number(b.bot ? 0 : 1));
     this.seed = (this.seed * 1103515245 + 12345 + Date.now()) >>> 0;
-    this.race = new Race(this.settings.track, this.settings.laps, entrants, this.seed, (e) => this.broadcast({ t: 'ev', e }, true));
+    this.race = new Race(this.settings.track, this.settings.laps, entrants, this.seed, (e) => this.broadcast({ t: 'ev', e }, true), this.settings.cpu);
     this.ticks = 0;
     this.broadcast({ t: 'race', track: this.settings.track, laps: this.settings.laps, entrants }, true);
     this.broadcastRoom();

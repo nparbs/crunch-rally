@@ -137,9 +137,12 @@ export function buildTrack(track: Track): THREE.Group {
         new THREE.PlaneGeometry(w, 3.5),
         new THREE.MeshBasicMaterial({ map: padTex, transparent: true }),
       );
+      // Lay the plane flat with the chevrons (texture up) pointing along the road.
+      // Rx(-90) maps the texture's up to -Z, so a half turn about Z first flips it to +Z (forward).
       m.rotation.order = 'YXZ';
       m.rotation.y = Math.PI / 2 - p.h;
       m.rotation.x = -Math.PI / 2;
+      m.rotation.z = Math.PI;
       m.position.set(p.x, p.y + 0.07, p.z);
       m.name = 'pad';
       group.add(m);
@@ -161,11 +164,13 @@ export function buildTrack(track: Track): THREE.Group {
       m.castShadow = true;
       group.add(m);
       const stripe = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.9, len * 1.02), new THREE.MeshBasicMaterial({ map: padTex, transparent: true }));
+      // Same flip as the pads, then tilt to match the wedge, which rises toward the launch point.
       stripe.rotation.order = 'YXZ';
       stripe.rotation.y = Math.PI / 2 - q.h;
-      stripe.rotation.x = -Math.PI / 2 + Math.atan2(1.1, len);
+      stripe.rotation.x = -Math.PI / 2 - Math.atan2(1.1, len);
+      stripe.rotation.z = Math.PI;
       const mid = track.pointAt(s - len / 2, pd.lat);
-      stripe.position.set(mid.x, mid.y + 0.6, mid.z);
+      stripe.position.set(mid.x, mid.y + 0.57, mid.z);
       group.add(stripe);
     }
   }

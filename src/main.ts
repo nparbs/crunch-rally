@@ -11,6 +11,7 @@ import { World, TIER_COLORS } from './render/world';
 import { ABILITIES, CHARACTERS, charById } from './sim/characters';
 import { ITEMS, type ItemId } from './sim/items';
 import type { Result } from './sim/race';
+import { CPU_LEVELS, type CpuLevel } from './sim/bot';
 import { TRACKS } from './sim/tracks';
 
 declare const __APP_VERSION__: string;
@@ -89,7 +90,7 @@ function showTitle(): void {
         <button class="btn" id="create">Create a room</button>
         <div class="row"><input class="field code-in grow" id="code" maxlength="4" placeholder="CODE" value="${esc(code.toUpperCase())}" /><button class="btn alt" id="join">Join</button></div>
         <div class="err">${esc(titleError)}</div>
-        <div class="panel keys">${isTouch() ? 'Drag on the left to steer. Gas is automatic. Hold <b>DRIFT</b> while turning, let go for a boost.' : '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>WASD</kbd> drive · <kbd>Space</kbd> hop / drift (hold while turning, let go to boost) · <kbd>E</kbd> item · <kbd>Q</kbd> ability · <kbd>1</kbd>-<kbd>8</kbd> emotes · gamepads work too'}</div>
+        <div class="panel keys">${isTouch() ? 'Drag on the left to steer. Hold <b>GAS</b> to drive (hold it as GO! lands for a rocket start). Slide onto <b>DRIFT</b> while turning, let go for a boost.' : '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>WASD</kbd> drive · <kbd>Space</kbd> hop / drift (hold while turning, let go to boost) · <kbd>E</kbd> item · <kbd>Q</kbd> ability · <kbd>1</kbd>-<kbd>8</kbd> emotes · gamepads work too'}</div>
         <div class="foot">v${__APP_VERSION__} · <a href="https://github.com/nparbs/crunch-rally" target="_blank" rel="noopener">source</a></div>
       </div>
     </div>`;
@@ -224,6 +225,7 @@ function showLobby(): void {
         <div class="setting">Laps ${[1, 2, 3, 4, 5].map((n) => `<button class="pill${n === s.laps ? ' on' : ''}" data-l="${n}" ${host ? '' : 'disabled'}>${n}</button>`).join('')}
           ${solo ? '' : `<span style="margin-left:12px">CPU racers</span> <button class="pill${s.fill ? ' on' : ''}" id="fill" ${host ? '' : 'disabled'}>${s.fill ? 'On' : 'Off'}</button>`}
         </div>
+        ${solo || s.fill ? `<div class="setting">CPUs ${CPU_LEVELS.map((c) => `<button class="pill${c === s.cpu ? ' on' : ''}" data-c="${c}" ${host ? '' : 'disabled'}>${c[0].toUpperCase() + c.slice(1)}</button>`).join('')}</div>` : ''}
         <div class="setting">Racer: <span style="font-family:var(--font);font-size:20px">${esc(charById(myChar()).name)}</span>
           <button class="pill" id="prev">◀</button><button class="pill" id="next">▶</button></div>
         <div class="lobby-actions">
@@ -235,6 +237,7 @@ function showLobby(): void {
   const send = (settings: Partial<RoomSettings>) => link?.send({ t: 'settings', settings: { ...s, ...settings } });
   ui.querySelectorAll<HTMLButtonElement>('.track').forEach((b) => (b.onclick = () => send({ track: b.dataset.t! })));
   ui.querySelectorAll<HTMLButtonElement>('[data-l]').forEach((b) => (b.onclick = () => send({ laps: Number(b.dataset.l) })));
+  ui.querySelectorAll<HTMLButtonElement>('[data-c]').forEach((b) => (b.onclick = () => send({ cpu: b.dataset.c as CpuLevel })));
   const fill = ui.querySelector<HTMLButtonElement>('#fill');
   if (fill) fill.onclick = () => send({ fill: !s.fill });
   const cycle = (d: number) => {
@@ -333,6 +336,10 @@ function onRaceEvent(e: ClientEvent, mine: boolean): void {
     case 'ramp': play('ramp'); break;
     case 'land': play('land'); break;
     case 'pad': play('boostpad'); break;
+    case 'draft':
+      play('boostpad', 0.7);
+      if (mine) center('SLIPSTREAM!', true);
+      break;
     case 'wall':
       play('wall', Math.min(1, e.power / 20));
       world.addShake(Math.min(0.4, e.power / 60));

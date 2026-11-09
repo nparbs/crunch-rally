@@ -18,17 +18,22 @@ export interface Brain {
   sloppy: number; // steering noise
 }
 
-export function newBrain(rand: () => number): Brain {
+export type CpuLevel = 'easy' | 'normal' | 'hard';
+export const CPU_LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
+
+export function newBrain(rand: () => number, level: CpuLevel = 'normal'): Brain {
+  const easy = level === 'easy', hard = level === 'hard';
   return {
-    skill: 0.93 + rand() * 0.06,
+    skill: easy ? 0.86 + rand() * 0.05 : hard ? 0.98 + rand() * 0.04 : 0.93 + rand() * 0.06,
     lane: rand() * 1.4 - 0.7,
     laneT: 2 + rand() * 4,
-    driftTarget: rand() < 0.5 ? 2 : 1,
+    driftTarget: easy ? 1 : hard ? 2 : rand() < 0.5 ? 2 : 1,
     holdT: 0,
-    startAt: 0.3 + rand() * 1.3, // some get a rocket start, some don't
-    itemWait: 0.6 + rand() * 2,
-    abilityWait: 0.5 + rand() * 3,
-    sloppy: 0.05 + rand() * 0.12,
+    // Some get a rocket start, some don't. Hard CPUs get it more often.
+    startAt: hard ? 0.3 + rand() * 0.9 : easy ? 0.8 + rand() * 1.6 : 0.3 + rand() * 1.3,
+    itemWait: (easy ? 1.5 : 0.6) + rand() * 2,
+    abilityWait: (easy ? 1.5 : 0.5) + rand() * 3,
+    sloppy: easy ? 0.12 + rand() * 0.12 : hard ? 0.03 + rand() * 0.05 : 0.05 + rand() * 0.12,
   };
 }
 

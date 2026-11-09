@@ -297,6 +297,11 @@ export class World {
         this.particles.emit(k.x - fx * 1.5 + rx * side, k.y + 0.55, k.z - fz * 1.5 + rz * side, -fx * 6, 0.5, -fz * 6, Math.random() < 0.5 ? 0xffd23f : 0xff6a1f, 0.45, 0.18, 0);
       }
     }
+    if (k.draftT > 0.35 && Math.random() < 0.3 + k.draftT * 0.4) {
+      // Wind lines streaming past while tucked in a slipstream.
+      const side = (Math.random() < 0.5 ? -1 : 1) * (0.9 + Math.random() * 0.5);
+      this.particles.emit(k.x + fx * 1.5 + rx * side, k.y + 0.6 + Math.random() * 0.8, k.z + fz * 1.5 + rz * side, -fx * 16, 0, -fz * 16, 0xffffff, 0.22, 0.25, 0);
+    }
     if (k.fireT > 0) this.particles.emit(k.x - fx * 1.8, k.y + 0.4, k.z - fz * 1.8, 0, 3, 0, 0xff3b1f, 0.8, 0.35, -2);
     if (k.slowT > 0 && Math.random() < 0.2) this.particles.emit(k.x, k.y + 2.2, k.z, 0, 1.5, 0, 0x5cc24a, 0.6, 0.6, 0);
     if (k.fallT > 0 && Math.random() < 0.5) this.particles.emit(k.x, k.y + 0.5, k.z, (Math.random() - 0.5) * 3, 4, (Math.random() - 0.5) * 3, 0xd8321c, 0.6, 0.5, 12);

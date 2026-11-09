@@ -17,6 +17,8 @@ export const NO_INPUT: Input = { throttle: 0, steer: 0, drift: false };
 export const DRIFT_TIERS = [0, 0.75, 1.6, 2.6];
 export const DRIFT_BOOST = [0, 0.6, 1.3, 2.1];
 export const GRAVITY = 30;
+/** Seconds tucked in behind another kart before the slipstream boost fires. */
+export const DRAFT_TIME = 1.4;
 
 export interface Kart {
   id: string;
@@ -52,6 +54,7 @@ export interface Kart {
   fallT: number; // > 0 while falling into something and being fished out
   safeS: number; // last distance along the lap on solid road
   wrongT: number;
+  draftT: number; // time spent in someone's slipstream
   // Race progress
   lap: number;
   mask: number; // sectors visited this lap (4 bits)
@@ -73,6 +76,7 @@ export type KartEvent =
   | { k: 'fall' }
   | { k: 'respawn' }
   | { k: 'pad' }
+  | { k: 'draft' } // slipstream boost fired
   | { k: 'ramp' }
   | { k: 'lap'; lap: number };
 
@@ -81,7 +85,7 @@ export function newKart(id: string, char: string): Kart {
     id, char, x: 0, y: 0, z: 0, h: 0, speed: 0, vy: 0, air: false, si: -1, steerVis: 0,
     driftHeld: false, drift: 0, driftT: 0, tier: 0, boostT: 0, boostMul: 1.3,
     spinT: 0, invulnT: 0, shieldT: 0, slowT: 0, slickT: 0, blindT: 0, sugarT: 0, fireT: 0,
-    grapT: 0, grapX: 0, grapZ: 0, rampAir: false, trick: false, fallT: 0, safeS: 0, wrongT: 0,
+    grapT: 0, grapX: 0, grapZ: 0, rampAir: false, trick: false, fallT: 0, safeS: 0, wrongT: 0, draftT: 0,
     lap: 0, mask: 15, s: 0, lat: 0, finished: false, finishTime: 0, t: 0, mul: 1,
   };
 }
@@ -96,9 +100,9 @@ export interface Stats {
 export function statsFor(char: string): Stats {
   const c = charById(char);
   return {
-    max: 26 + (c.speed - 3) * 0.55,
-    accel: 15 + (c.accel - 3) * 3,
-    turn: 1.95 + (c.handling - 3) * 0.17,
+    max: 26 + (c.speed - 3) * 0.32,
+    accel: 15 + (c.accel - 3) * 3.5,
+    turn: 1.95 + (c.handling - 3) * 0.2,
     weight: 1 + (c.weight - 3) * 0.2,
   };
 }
@@ -156,7 +160,7 @@ export function stepKart(k: Kart, inp: Input, track: Track, dt: number, pads: Pa
   // Top speed for this moment.
   let max = st.max * k.mul;
   if (k.slowT > 0) max *= 0.68;
-  if (k.fireT > 0) max *= 1.08;
+  if (k.fireT > 0) max *= 1.12;
   if (offroad && k.boostT <= 0) max *= 0.55;
   if (k.boostT > 0) max = st.max * k.mul * k.boostMul;
 
@@ -330,6 +334,37 @@ export function stepKart(k: Kart, inp: Input, track: Track, dt: number, pads: Pa
   const lapEv = updateProgress(k, loc2.s, loc2.lat, track);
   if (lapEv) ev.push(lapEv);
   return ev;
+}
+
+/**
+ * Slipstream: stay close behind another kart for DRAFT_TIME seconds to get a short boost.
+ * The page runs this for its own kart against everyone it can see; the server runs it for CPUs.
+ */
+export function slipstream(k: Kart, others: Iterable<Kart>, dt: number): KartEvent | null {
+  let behind = false;
+  if (!k.air && k.speed > 16 && k.spinT <= 0 && k.fallT <= 0 && k.boostT <= 0) {
+    const fx = Math.cos(k.h), fz = Math.sin(k.h);
+    for (const o of others) {
+      if (o === k || o.fallT > 0 || Math.abs(o.y - k.y) > 2) continue;
+      const dx = o.x - k.x, dz = o.z - k.z;
+      const ahead = dx * fx + dz * fz;
+      const side = Math.abs(dx * -fz + dz * fx);
+      if (ahead > 2.5 && ahead < 15 && side < 1.2 + ahead * 0.06) {
+        behind = true;
+        break;
+      }
+    }
+  }
+  if (!behind) {
+    k.draftT = Math.max(0, k.draftT - dt * 2);
+    return null;
+  }
+  k.draftT += dt;
+  if (k.draftT < DRAFT_TIME) return null;
+  k.draftT = 0;
+  k.boostT = Math.max(k.boostT, 1.0);
+  k.boostMul = 1.25;
+  return { k: 'draft' };
 }
 
 /** Lap counting with four sectors, so cutting back over the line doesn't count. */

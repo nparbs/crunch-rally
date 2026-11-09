@@ -143,16 +143,21 @@ input { font: inherit; }
 }
 .steer-base.on { opacity: 1; }
 .steer-knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(255,255,255,.85); border: 3px solid var(--ink); }
-.tbtns { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: 12px; display: grid; grid-template-columns: 70px 92px; grid-template-rows: 70px 92px; gap: 10px; pointer-events: auto; }
+.tbtns {
+  position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: 12px; display: grid; gap: 10px; pointer-events: auto; touch-action: none;
+  grid-template-columns: 62px 84px 84px; grid-template-rows: 70px 96px;
+  grid-template-areas: "ab it gas" "br dr gas";
+}
 .tb {
   border-radius: 50%; border: 3px solid var(--ink); background: rgba(255,255,255,.75); color: var(--ink); font-size: 15px; touch-action: none;
   box-shadow: 0 4px 0 rgba(42,26,16,.6);
 }
 .tb.down { transform: translateY(3px); box-shadow: none; filter: brightness(.85); }
-.tb-drift { background: rgba(255, 138, 31, .85); font-size: 18px; grid-column: 2; grid-row: 2; }
-.tb-item { grid-column: 2; grid-row: 1; width: 70px; height: 70px; justify-self: center; align-self: end; }
-.tb-brake { grid-column: 1; grid-row: 2; width: 62px; height: 62px; align-self: end; }
-.tb-ability { grid-column: 1; grid-row: 1; font-size: 26px; }
+.tb-gas { grid-area: gas; border-radius: 22px; background: rgba(110, 214, 92, .9); font-size: 20px; }
+.tb-drift { grid-area: dr; background: rgba(255, 138, 31, .85); font-size: 17px; }
+.tb-brake { grid-area: br; width: 62px; height: 62px; align-self: end; font-size: 12px; background: rgba(232, 68, 58, .8); color: #fff; }
+.tb-item { grid-area: it; width: 70px; height: 70px; justify-self: center; align-self: end; }
+.tb-ability { grid-area: ab; width: 62px; height: 62px; align-self: end; font-size: 26px; }
 .tb-ability.full { background: var(--yellow); animation: shine .6s infinite alternate; }
 body:not(.touchui) .touch { display: none; }
 body.touchui .hud .place { bottom: auto; top: 10px; left: auto; right: 180px; font-size: 46px; }
@@ -179,9 +184,10 @@ body.touchui .hud .map { top: 70px; width: 100px; height: 100px; }
   .hud .meter { width: 110px; }
   .hud .slot { width: 60px; height: 60px; font-size: 32px; }
   .hud .meter { right: calc(env(safe-area-inset-right) + 84px); }
-  body.touchui .hud .place { right: 150px; }
-  .tbtns { grid-template-columns: 60px 80px; grid-template-rows: 60px 80px; }
+  body.touchui .hud .place { right: 200px; }
+  .tbtns { grid-template-columns: 54px 74px 74px; grid-template-rows: 60px 84px; gap: 8px; }
   .tb-item { width: 60px; height: 60px; }
+  .tb-brake, .tb-ability { width: 54px; height: 54px; }
 }
 @media (max-width: 720px) and (orientation: portrait) {
   .title { flex-direction: column; }
@@ -189,5 +195,8 @@ body.touchui .hud .map { top: 70px; width: 100px; height: 100px; }
   .tracks { grid-template-columns: 1fr; }
   .hud .meter { width: 100px; top: 84px; right: 14px; }
   .hud .center { top: 20%; }
-  body.touchui .hud .place { right: 14px; top: 120px; }
+  body.touchui .hud .place { right: 14px; top: 140px; }
+  /* Narrow screen: two columns so the left half stays free for steering. */
+  .tbtns { grid-template-columns: 62px 80px; grid-template-rows: 62px 84px 62px; grid-template-areas: "ab it" "dr gas" "br gas"; }
+  .tb-brake { align-self: center; }
 }

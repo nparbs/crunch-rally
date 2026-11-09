@@ -1,6 +1,6 @@
 // Drive the game in headless Chrome and save screenshots to ./shots.
 // Usage: node scripts/screenshots.mjs [scenario...]   (needs `npm run dev`, URL=... to override)
-// Scenarios: desktop, nacho, phone, portrait. window.cr exposes rc, room, world, screen.
+// Scenarios: desktop, nacho, pads, phone, portrait. window.cr exposes rc, room, world, screen.
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
@@ -85,20 +85,52 @@ if (want('nacho')) {
   }
 }
 
+if (want('pads')) {
+  // Park behind each boost pad and the ramp: the chevrons should point away from the camera.
+  const page = await open({ width: 1280, height: 720 });
+  await soloRace(page, 'picnic');
+  await wait(page, 3200);
+  for (const [name, at, lat] of [['15-pad-boost', 0.3, 3], ['16-pad-ramp', 0.555, 0]]) {
+    await page.evaluate(([at, lat]) => {
+      const rc = window.cr.rc; const k = rc.me; const t = rc.track;
+      const d = at * t.length - 14;
+      const p = t.pointAt(d, lat);
+      Object.assign(k, { x: p.x, y: p.y, z: p.z, h: p.h, speed: 0, si: t.indexAt(d), s: d });
+    }, [at, lat]);
+    await wait(page, 1200);
+    await shot(page, name);
+  }
+}
+
+/** Hold an on-screen pedal with a pointer, the way a thumb would. */
+async function press(page, sel) {
+  const b = await page.locator(sel).boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+}
+
 if (want('phone')) {
   const page = await open({ width: 640, height: 360 }, { touch: true });
   await shot(page, '11-phone-title');
   await soloRace(page, 'picnic');
-  await wait(page, 4500);
+  await wait(page, 2000);
+  await press(page, '.tb-gas');
+  await wait(page, 2500);
   await shot(page, '12-phone-race');
+  const st = await page.evaluate(() => ({ speed: window.cr.rc.me.speed, gas: document.querySelector('.tb-gas').classList.contains('down') }));
+  console.log('phone state', JSON.stringify(st));
+  await page.mouse.up();
 }
 
 if (want('portrait')) {
   const page = await open({ width: 360, height: 640 }, { touch: true });
   await shot(page, '13-portrait-title');
   await soloRace(page, 'picnic');
-  await wait(page, 4500);
+  await wait(page, 2000);
+  await press(page, '.tb-gas');
+  await wait(page, 2500);
   await shot(page, '14-portrait-race');
+  await page.mouse.up();
 }
 
 await browser.close();

@@ -8,7 +8,7 @@ Play at **https://crunch.parbs.online**. Race the CPUs on your own, or create a 
 
 | | Keyboard | Gamepad | Touch |
 | --- | --- | --- | --- |
-| Drive | `↑` `↓` `←` `→` / `WASD` | stick, A / RT gas, B / LT brake | drag on the left half (gas is automatic) |
+| Drive | `↑` `↓` `←` `→` / `WASD` | stick, A / RT gas, B / LT brake | drag on the left half; GAS, BRAKE and DRIFT buttons on the right (DRIFT also gives gas, and a thumb can slide between them) |
 | Hop / drift | `Space` or `Shift` (hold while turning, let go to boost) | RB / LB | DRIFT |
 | Item | `E` | X | ITEM |
 | Ability | `Q` | Y | ★ |

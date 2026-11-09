@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ServerMsg } from '../src/net/protocol';
+import type { RoomSettings, ServerMsg } from '../src/net/protocol';
 import { Room } from '../src/net/room';
 import { getTrack } from '../src/sim/track';
 import { trackById } from '../src/sim/tracks';
@@ -19,10 +19,15 @@ describe('room', () => {
     expect(info.host).toBe('a');
     expect(info.players.map((p) => p.name)).toEqual(['Ann', 'Bob']);
     expect(info.players[1].char).toBe('hal'); // unknown character falls back
-    room.handle('b', { t: 'settings', settings: { track: 'nacho', laps: 9, fill: false } });
+    room.handle('b', { t: 'settings', settings: { track: 'nacho', laps: 9, fill: false, cpu: 'hard' } });
     expect(room.settings.track).toBe('picnic');
-    room.handle('a', { t: 'settings', settings: { track: 'nacho', laps: 9, fill: true } });
-    expect(room.settings).toEqual({ track: 'nacho', laps: 5, fill: true });
+    // An older page sends no CPU level: keep the current one.
+    room.handle('a', { t: 'settings', settings: { track: 'nacho', laps: 9, fill: true } as RoomSettings });
+    expect(room.settings).toEqual({ track: 'nacho', laps: 5, fill: true, cpu: 'normal' });
+    room.handle('a', { t: 'settings', settings: { ...room.settings, cpu: 'hard' } });
+    expect(room.settings.cpu).toBe('hard');
+    room.handle('a', { t: 'settings', settings: { ...room.settings, cpu: 'nightmare' as never } });
+    expect(room.settings.cpu).toBe('hard');
     room.handle('b', { t: 'start' });
     expect(room.race).toBeNull();
     room.handle('a', { t: 'start' });
@@ -37,7 +42,7 @@ describe('room', () => {
     const a = peer('a'), b = peer('b');
     room.add(a.p, 'Ann', 'glaze');
     room.add(b.p, 'Bob', 'fizz');
-    room.handle('a', { t: 'settings', settings: { track: 'picnic', laps: 1, fill: true } });
+    room.handle('a', { t: 'settings', settings: { track: 'picnic', laps: 1, fill: true, cpu: 'easy' } });
     room.handle('a', { t: 'start' });
     const race = room.race!;
     const tr = getTrack(trackById('picnic'));

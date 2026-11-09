@@ -8,7 +8,7 @@ An original multiplayer snack-mascot kart racer (Three.js, TypeScript, Vite, Nod
 - `src/sim` must stay free of Three.js and the DOM, because the server runs it.
 - All models are built in code (`src/render/models.ts`, `props.ts`, `trackMesh.ts`) and all sound in `src/audio/sfx.ts`. Don't add model, image or audio files.
 - Run `npm test` after changing physics, items, tracks or rooms. The CPU race tests catch broken tracks (karts that can't finish) and hit loops.
-- To try balance quickly, run `npx esbuild scripts/simrace.ts --bundle --platform=node --format=esm --outfile=$TEMP/simrace.mjs && node $TEMP/simrace.mjs`. It prints full CPU races.
+- To try balance quickly, run `npx esbuild scripts/simrace.ts --bundle --platform=node --format=esm --outfile=$TEMP/simrace.mjs && node $TEMP/simrace.mjs`. It prints full CPU races. `scripts/balance.ts` (same build command) runs many shuffled-grid races to compare racers fairly.
 - For a headless check, start `npm run dev`, then run `URL=http://localhost:PORT/ npm run shots`. `window.cr` exposes `rc` (the race client), `room`, `world` and `screen`. Headless Chrome renders slowly, so the game clock runs slow in screenshots.
 - Phone layouts: check at 640x360 and 360x640 at the smallest. Nothing smaller needs to work.
 - Tone: bright, silly cartoon snack world. Rivalry is friendly and slapstick.

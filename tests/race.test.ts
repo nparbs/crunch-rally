@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CHARACTERS } from '../src/sim/characters';
-import { DRIFT_BOOST, applyHit, newKart, padsFor, placeOnGrid, stepKart, updateProgress } from '../src/sim/kart';
+import { DRAFT_TIME, DRIFT_BOOST, applyHit, newKart, padsFor, placeOnGrid, slipstream, stepKart, updateProgress } from '../src/sim/kart';
 import { rollItem } from '../src/sim/items';
 import { Race, type RaceEvent } from '../src/sim/race';
 import { getTrack } from '../src/sim/track';
@@ -107,4 +107,19 @@ describe('a race of CPUs', () => {
       expect(events.some((e) => e.k === 'ability')).toBe(true);
     });
   }
+
+  it('slipstream boosts a kart that stays tucked in behind another', () => {
+    const me = newKart('me', 'dill'), them = newKart('them', 'hal');
+    Object.assign(me, { x: 0, z: 0, h: 0, speed: 24 });
+    Object.assign(them, { x: 7, z: 0.4, h: 0, speed: 24 });
+    let fired = 0;
+    for (let t = 0; t < DRAFT_TIME + 0.1; t += 1 / 60) if (slipstream(me, [me, them], 1 / 60)) fired++;
+    expect(fired).toBe(1);
+    expect(me.boostT).toBeGreaterThan(0.9);
+    // Off to the side: no draft.
+    const side = newKart('side', 'dill');
+    Object.assign(side, { x: 0, z: 5, h: 0, speed: 24 });
+    for (let t = 0; t < 3; t += 1 / 60) expect(slipstream(side, [side, them], 1 / 60)).toBeNull();
+    expect(side.draftT).toBe(0);
+  });
 });

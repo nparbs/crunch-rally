@@ -1,8 +1,18 @@
 # Handoff
 
-This is the state as of **v0.1.0, live at https://crunch.parbs.online since 2026-11-09**. It's written for whoever picks the project up next. README.md covers running it, ROADMAP.md the plan and decisions, and docs/hosting.md the server.
+This is the state as of **v0.1.1 (2026-11-09)**, live at https://crunch.parbs.online. It's written for whoever picks the project up next. README.md covers running it, ROADMAP.md the plan and decisions, and docs/hosting.md the server.
 
 ## Where it stands
+
+**What v0.1.1 changed** (on top of v0.1.0, all in ROADMAP.md under v0.1.1):
+- **Touch: no more auto-gas.** The user asked for GAS and BRAKE buttons. The right side now has a tall GAS pedal, DRIFT, BRAKE, ITEM and ★. Holding DRIFT also gives gas, so the usual thumb move is to hold GAS and slide onto DRIFT for a bend. Pedals follow the finger (`pedalFingers` in `src/game/input.ts`), so sliding between them works without lifting. Rocket starts now work on touch, because the gas isn't held through the whole countdown anymore. Portrait uses a two-column layout so the left half stays free for steering.
+- **Boost pad and ramp chevrons now point forward.** They used to point backwards. `Rx(-90°)` maps a plane's texture-up to -Z, and models face +Z, so the pads need an extra `rotation.z = PI`. The ramp stripe also tilted the wrong way. This was checked numerically and in the `pads` screenshot scenario.
+- **Balance:** Hal was winning about 40% of CPU races even with a shuffled grid. The fixes:
+  - The speed stat now adds 0.32 m/s per point instead of 0.55, accel adds 3.5 per point and handling 0.2.
+  - Ghost Pepper no longer gives a free Espresso Shot. Its fire speed-up went from 1.08x to 1.12x instead.
+  - `scripts/balance.ts` runs N shuffled-grid races at equal skill and prints wins and average place per racer. Hal, Glaze and Fizz now trade the top spots, and Kernel, Gummo and Brie trail a little.
+- **Slipstream:** `slipstream()` in `src/sim/kart.ts` runs on the page for your own kart (against the karts you can see, which are drawn 100 ms in the past) and on the server for CPUs. Tuck in for `DRAFT_TIME` (1.4 s), within 2.5-15 m ahead and about a kart width sideways, to get a 1 s boost at 1.25x. Wind lines show while `draftT > 0.35`.
+- **CPU difficulty:** `RoomSettings.cpu` is `'easy' | 'normal' | 'hard'`, and `newBrain()` in `bot.ts` sets skill, sloppiness, drift target, rocket starts and item timing from it. Pages from before this release send settings without `cpu`; the room keeps its current level, so there was no protocol bump.
 
 Everything under v0.1 in ROADMAP.md is built, pushed and deployed:
 - 8 racers, each with a signature ability
@@ -17,13 +27,15 @@ How each part was checked:
 
 | Check | Result |
 | --- | --- |
-| `npm test` (11 tests) | Passes. Covers track geometry, drift tiers, shields, lap counting, item odds, full 8-CPU races on both tracks, and room flow: host-only settings, a whole race with one player who reports and one who leaves, and teleport rejection |
-| Headless screenshots (`npm run shots`) | Title, lobby, both tracks, phone at 640x360 and 360x640. No console errors |
+| `npm test` (12 tests) | Passes. Covers track geometry, drift tiers, shields, lap counting, item odds, slipstream, full 8-CPU races on both tracks, and room flow: host-only settings (including the CPU level and old pages that don't send one), a whole race with one player who reports and one who leaves, and teleport rejection |
+| Headless screenshots (`npm run shots`) | Title, lobby, both tracks, the pads close up (`pads`), phone at 640x360 and 360x640 holding the GAS pedal. No console errors |
 | Two browsers in one room (`scripts/mp.mjs`) | Passed against a local server **and against the live site** through Cloudflare |
 | Docker image | Builds and answers `/health`. The VM runs it as `crunch-rally-crunch-1` |
 
 **Not checked yet:**
-- **No human has played it.** Drift feel, turn rates, wall bounce, item odds and ability strength are first guesses. In CPU-only races Hotshot Hal wins most of the time.
+- **No human has played it.** Drift feel, turn rates, wall bounce, item odds and ability strength are first guesses. Balance is only tuned against CPU sims.
+- **The new touch pedals haven't been tried on a real phone.** Sliding between pedals was written for real multi-touch. Headless tests only pressed GAS with a mouse pointer.
+- **Slipstream hasn't been felt by a human.** In CPU races it fires a few times per kart per race.
 - **Nobody has listened to the sound.** `src/audio/sfx.ts` was written blind.
 - **The racer models were only seen in screenshots.** Kernel Pop reads poorly from behind: it looks like popcorn on a black box, and the red-and-white bucket is hidden.
 
@@ -79,7 +91,9 @@ server/index.ts  HTTP + WebSocket, rooms by code, limits; 60 Hz tick for all roo
 | Item odds by position | the `odds` arrays in `src/sim/items.ts` |
 | Item and ability effects | `useItem()` and `useAbility()` in `src/sim/race.ts` |
 | Ability charge rates | `METER_PASSIVE`, `METER_DRIFT`, `METER_HIT` in `src/sim/race.ts` |
-| CPU skill and catch-up | `newBrain()` in `src/sim/bot.ts`, `catchUp()` in `src/sim/race.ts` |
+| CPU skill per difficulty, and catch-up | `newBrain()` in `src/sim/bot.ts`, `catchUp()` in `src/sim/race.ts` |
+| Slipstream time, range and boost | `DRAFT_TIME` and `slipstream()` in `src/sim/kart.ts` |
+| Touch layout | `.tbtns` grid areas in `src/ui/style.css` (one layout for landscape, one for narrow portrait) |
 | Track layouts | `src/sim/tracks.ts` (run `npm test` after: the CPU races catch layouts karts can't finish) |
 | Race end | the room closes when every player has finished, or 45 s after the first player finishes (`FINISH_GRACE`) |
 
@@ -88,6 +102,8 @@ To see the effect of a balance change without a browser, run a full CPU race and
 ```sh
 npx esbuild scripts/simrace.ts --bundle --platform=node --format=esm --outfile=$TEMP/simrace.mjs && node $TEMP/simrace.mjs
 ```
+
+To compare racers fairly, run `scripts/balance.ts` the same way, with a race count as the argument (e.g. `node $TEMP/balance.mjs 60`). It shuffles the grid and gives every CPU the same skill.
 
 A healthy result is laps of about 29-33 s on both tracks, all 8 karts finishing, and roughly 30-45 hits per 3-lap race.
 
@@ -100,7 +116,7 @@ A healthy result is laps of about 29-33 s on both tracks, all 8 karts finishing,
 
 ## Suggested next steps
 
-1. **Get a playtest from the user** on desktop and on a phone, then tune using the knobs above. Hotshot Hal's speed and the drift feel come first.
+1. **Get a playtest from the user** on desktop and on a phone, then tune using the knobs above. The drift feel and the new touch pedals come first.
 2. **Fix what the playtest turns up,** plus the Kernel Pop model from behind.
 3. **Add page reconnect** after a dropped connection: rejoin the same room, and take your kart back from the CPU if the race is still on. Server rebuilds currently end everyone's race.
-4. **Start v0.2 from ROADMAP.md:** slipstream, holding items behind you, a CPU difficulty setting, and rematch voting.
+4. **Continue v0.2 from ROADMAP.md:** holding items behind you, throwing backwards, rematch and track voting, and the podium. Slipstream and CPU difficulty are done.

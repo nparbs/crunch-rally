@@ -2,6 +2,7 @@
 // WebSocket) and solo races (a room running inside the page).
 
 import type { KartReport, RaceEvent, Snapshot, Entrant } from '../sim/race';
+import type { CpuLevel } from '../sim/bot';
 
 /** Bump when old pages can no longer talk to the server; open pages are told to refresh. */
 export const PROTOCOL_VERSION = 1;
@@ -11,6 +12,7 @@ export interface RoomSettings {
   track: string;
   laps: number; // 1..5
   fill: boolean; // fill empty seats with CPU racers
+  cpu: CpuLevel; // CPU difficulty
 }
 
 export interface PlayerInfo {

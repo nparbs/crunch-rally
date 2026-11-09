@@ -2,7 +2,7 @@
 // reported to the room; everyone else is drawn about 100 ms in the past, smoothly interpolated.
 
 import {
-  applyBuff, applyHit, bump, newKart, padsFor, placeOnGrid, stepKart, type Input, type Kart, type KartEvent, type PadRuntime,
+  applyBuff, applyHit, bump, newKart, padsFor, placeOnGrid, slipstream, stepKart, type Input, type Kart, type KartEvent, type PadRuntime,
 } from '../sim/kart';
 import type { ItemId } from '../sim/items';
 import { lerp, wrapAngle } from '../sim/math';
@@ -136,6 +136,8 @@ export class RaceClient {
       } else this.grapId = '';
     }
     const ev = stepKart(k, k.finished ? { throttle: 0.6, steer: autoSteer(this.track, k), drift: false } : inp, this.track, DT, this.pads);
+    const draft = slipstream(k, [...this.others.values()].map((o) => o.kart), DT);
+    if (draft) ev.push(draft);
     for (const e of ev) {
       if (e.k === 'mt') this.send({ t: 'mt', tier: e.tier });
       if (e.k === 'wall') {

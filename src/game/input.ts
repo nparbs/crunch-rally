@@ -1,5 +1,6 @@
 // Keyboard, gamepad and touch, merged into one Input each frame.
-// Phones get auto-gas, drag-to-steer on the left half, and big buttons on the right.
+// Phones get drag-to-steer on the left half, and gas, brake, drift, item and ability buttons on the right.
+// A thumb can slide between GAS, DRIFT and BRAKE without lifting. Holding DRIFT also gives gas.
 
 import type { Input } from '../sim/kart';
 
@@ -21,7 +22,16 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
 
-const touch = { steer: 0, drift: false, brake: false, item: false, ability: false, used: false };
+const touch = { steer: 0, gas: false, drift: false, brake: false, item: false, ability: false, used: false };
+/** Which pedal button each finger is on, by pointer id. */
+const pedalFingers = new Map<number, Pedal>();
+type Pedal = 'gas' | 'drift' | 'brake';
+function syncPedals(): void {
+  const on = new Set(pedalFingers.values());
+  touch.gas = on.has('gas');
+  touch.drift = on.has('drift');
+  touch.brake = on.has('brake');
+}
 let padPrev: boolean[] = [];
 
 export const isTouch = () => matchMedia('(pointer: coarse)').matches || touch.used;
@@ -58,7 +68,7 @@ export function readControls(): Controls {
 
   if (touch.used) {
     if (!keys.size) {
-      throttle = touch.brake ? -1 : 1;
+      throttle = touch.brake ? -1 : touch.gas || touch.drift ? 1 : 0;
       steer = touch.steer;
     }
     drift = drift || touch.drift;
@@ -72,13 +82,15 @@ export function readControls(): Controls {
 
 /** Build the on-screen controls inside `root`. */
 export function mountTouch(root: HTMLElement): void {
+  releaseTouch();
   root.innerHTML = `
     <div class="steer-zone"><div class="steer-base"><div class="steer-knob"></div></div></div>
     <div class="tbtns">
       <button class="tb tb-ability" data-b="ability">★</button>
       <button class="tb tb-item" data-b="item">ITEM</button>
-      <button class="tb tb-brake" data-b="brake">◀◀</button>
-      <button class="tb tb-drift" data-b="drift">DRIFT</button>
+      <button class="tb tb-brake" data-p="brake">BRAKE</button>
+      <button class="tb tb-drift" data-p="drift">DRIFT</button>
+      <button class="tb tb-gas" data-p="gas">GAS</button>
     </div>`;
   const zone = root.querySelector<HTMLElement>('.steer-zone')!;
   const base = root.querySelector<HTMLElement>('.steer-base')!;
@@ -111,22 +123,69 @@ export function mountTouch(root: HTMLElement): void {
   zone.addEventListener('pointerup', end);
   zone.addEventListener('pointercancel', end);
 
-  for (const btn of root.querySelectorAll<HTMLButtonElement>('.tb')) {
-    const which = btn.dataset.b as 'drift' | 'brake' | 'item' | 'ability';
+  // Item and ability: one press each.
+  for (const btn of root.querySelectorAll<HTMLButtonElement>('.tb[data-b]')) {
+    const which = btn.dataset.b as 'item' | 'ability';
     btn.addEventListener('pointerdown', (e) => {
       touch.used = true;
-      btn.setPointerCapture(e.pointerId);
+      touch[which] = true;
       btn.classList.add('down');
-      if (which === 'drift' || which === 'brake') touch[which] = true;
-      else touch[which] = true;
       e.preventDefault();
     });
-    const up = () => {
-      btn.classList.remove('down');
-      if (which === 'drift' || which === 'brake') touch[which] = false;
-    };
+    const up = () => btn.classList.remove('down');
     btn.addEventListener('pointerup', up);
     btn.addEventListener('pointercancel', up);
+    btn.addEventListener('pointerleave', up);
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   }
+
+  // Pedals: a finger holds whichever pedal it's over, and can slide from one to another.
+  const pedals = [...root.querySelectorAll<HTMLButtonElement>('.tb[data-p]')];
+  const pedalAt = (x: number, y: number): Pedal | null => {
+    for (const b of pedals) {
+      const r = b.getBoundingClientRect();
+      if (x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6) return b.dataset.p as Pedal;
+    }
+    return null;
+  };
+  const show = () => {
+    const on = new Set(pedalFingers.values());
+    for (const b of pedals) b.classList.toggle('down', on.has(b.dataset.p as Pedal));
+  };
+  const box = root.querySelector<HTMLElement>('.tbtns')!;
+  for (const b of pedals) {
+    b.addEventListener('pointerdown', (e) => {
+      touch.used = true;
+      b.releasePointerCapture?.(e.pointerId);
+      box.setPointerCapture(e.pointerId);
+      pedalFingers.set(e.pointerId, b.dataset.p as Pedal);
+      syncPedals();
+      show();
+      e.preventDefault();
+    });
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  box.addEventListener('pointermove', (e) => {
+    if (!pedalFingers.has(e.pointerId)) return;
+    const p = pedalAt(e.clientX, e.clientY);
+    if (p && p !== pedalFingers.get(e.pointerId)) {
+      pedalFingers.set(e.pointerId, p);
+      syncPedals();
+      show();
+    }
+  });
+  const lift = (e: PointerEvent) => {
+    if (!pedalFingers.delete(e.pointerId)) return;
+    syncPedals();
+    show();
+  };
+  box.addEventListener('pointerup', lift);
+  box.addEventListener('pointercancel', lift);
+}
+
+/** Let go of every touch pedal (e.g. when the race screen closes). */
+export function releaseTouch(): void {
+  pedalFingers.clear();
+  syncPedals();
+  touch.steer = 0;
 }
