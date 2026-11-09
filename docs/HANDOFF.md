@@ -89,7 +89,7 @@ To see the effect of a balance change without a browser, run a full CPU race and
 npx esbuild scripts/simrace.ts --bundle --platform=node --format=esm --outfile=$TEMP/simrace.mjs && node $TEMP/simrace.mjs
 ```
 
-A healthy result is laps of about 28-30 s on both tracks, all 8 karts finishing, and roughly 30-45 hits per 3-lap race.
+A healthy result is laps of about 29-33 s on both tracks, all 8 karts finishing, and roughly 30-45 hits per 3-lap race.
 
 ## Shipping
 
